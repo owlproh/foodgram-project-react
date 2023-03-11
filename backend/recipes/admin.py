@@ -1,8 +1,8 @@
 from django.contrib import admin
 from foodgram.settings import LIST_PER_PAGE
 
-from .models import (Favorite, Ingredient, Ingredient_to_Recipe, Recipe,
-                     Shopping_Cart, Tag)
+from .models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
+                     ShoppingCart, Tag)
 
 
 @admin.register(Tag)
@@ -64,19 +64,19 @@ class RecipeAdmin(admin.ModelAdmin):
         return obj.favorite.count()
 
 
-@admin.register(Ingredient_to_Recipe)
+@admin.register(IngredientToRecipe)
 class IngRecAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'ingredient',
         'recipe',
-        'cnt'
+        'amount'
     )
     empty_value_display = '<--пусто-->'
     list_filter = (
         'ingredient',
         'recipe',
-        'cnt'
+        'amount'
     )
     search_fields = (
         'ingredient',
@@ -98,7 +98,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_per_page = LIST_PER_PAGE
 
 
-@admin.register(Shopping_Cart)
+@admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'pk',

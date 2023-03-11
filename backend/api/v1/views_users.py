@@ -10,7 +10,7 @@ from .serializers_users import (FollowingSerializer, FollowingShowSerializer,
                                 UserSerializer)
 
 
-class User_ViewSet(UserViewSet):
+class UsersViewSet(UserViewSet):
     """Viewset для объектов модели User"""
     queryset = User.objects.all()
     serializer_class = UserSerializer

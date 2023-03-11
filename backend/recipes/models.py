@@ -10,14 +10,22 @@ class Tag(models.Model):
         max_length=150,
         unique=True,
         db_index=True,
+        validators=[RegexValidator(
+            regex=r'^[a-fA-FА-Яа-я0-9]',
+            message='Название тега содержит недопустимый символ'
+        )],
         verbose_name='Имя тега',
         help_text='Введите название тега',
     )
     color = models.CharField(
         max_length=7,
         unique=True,
+        validators=[RegexValidator(
+            regex=r'^#+[a-fA-F0-9]',
+            message='Неверный hex-code цвета'
+        )],
         verbose_name='Hex-code цвета',
-        help_text='Введите Hex-код нужного цвета',
+        help_text='Введите Hex-code нужного цвета',
     )
     slug = models.SlugField(
         max_length=50,
@@ -66,9 +74,9 @@ class Recipe(models.Model):
     """Класс модели Рецептов"""
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='Ingredient_to_Recipe',
+        through='IngredientToRecipe',
         related_name='recipes',
-        verbose_name='Ингридиенты',
+        verbose_name='Ингредиенты',
         help_text='Укажите ингредиенты для блюда',
     )
     tags = models.ManyToManyField(
@@ -124,7 +132,7 @@ class Recipe(models.Model):
         return self.name[:TEXT_SL]
 
 
-class Ingredient_to_Recipe(models.Model):
+class IngredientToRecipe(models.Model):
     """Класс вспомогательной модели для связи ингредиентов и рецептов"""
     ingredient = models.ForeignKey(
         Ingredient,
@@ -140,7 +148,7 @@ class Ingredient_to_Recipe(models.Model):
         verbose_name='Рецепт',
         help_text='Укажите для какого блюда вы выбрали ингредиент(ы)'
     )
-    cnt = models.PositiveIntegerField(
+    amount = models.PositiveIntegerField(
         verbose_name='Количество ингредиента',
         validators=[
             MinValueValidator(
@@ -165,10 +173,10 @@ class Ingredient_to_Recipe(models.Model):
     def __str__(self):
         return (f'В рецепте <<{self.recipe.name}>>'
                 f'следующий(ие) ингредиент(ы): {self.ingredient.name}'
-                f'({self.cnt})')
+                f'({self.amount})')
 
 
-class Shopping_Cart(models.Model):
+class ShoppingCart(models.Model):
     """Класс модели Корзины"""
     recipe = models.ForeignKey(
         Recipe,

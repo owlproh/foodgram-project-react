@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscription, User
 
-taboo_logins = ['me', 'admin', 'user']
+taboo_logins = ('me', 'admin', 'user')
 
 
 class UserPOSTSerializer(UserCreateSerializer):
@@ -70,7 +70,7 @@ class UserSerializer(UserSerializer):
 
     def get_is_follower(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if not request or request.user.is_anonymous:
             return False
         return obj.author.filter(follower=request.user).exists()
 
@@ -92,7 +92,11 @@ class FollowingSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        if data['follower'] == data['author']:
+        if not data.get('follower'):
+            raise KeyError(
+                'Не заполнено поле follower!'
+            )
+        if data.get('follower') == data.get('author'):
             raise serializers.ValidationError(
                 'Не пытайтесь накрутить подписчиков!'
             )
@@ -144,6 +148,6 @@ class FollowingShowSerializer(serializers.ModelSerializer):
 
     def get_is_follower(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if not request or request.user.is_anonymous:
             return False
         return obj.author.filter(follower=request.user).exists()

@@ -17,19 +17,19 @@ class RecipeFilter(FilterSet):
 
     def filter(self, qs, name, value):
         if self.request.query_params.get("is_favorited"):
-            qs = qs.filter(favorite__user=self.request.user)
+            qs = qs.filter(recipe__user=self.request.user)
         if self.request.query_params.get("is_in_shopping_cart"):
-            qs = qs.filter(cart__customer=self.request.user)
+            qs = qs.filter(recipe__user=self.request.user)
         return qs
 
     class Meta:
         model = Recipe
-        fields = [
+        fields = (
             "tags",
             "author",
             "is_favorited",
-            "is_in_shopping_cart"
-        ]
+            "is_in_shopping_cart",
+        )
 
 
 class IngredientFilter(FilterSet):

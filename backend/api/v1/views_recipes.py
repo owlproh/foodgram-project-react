@@ -2,8 +2,8 @@ from django.http import FileResponse
 from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import (Favorite, Ingredient, Ingredient_to_Recipe, Recipe,
-                            Shopping_Cart, Tag)
+from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
+                            ShoppingCart, Tag)
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -47,7 +47,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return (
             super().get_queryset().annotate(
                 is_in_cart=Exists(
-                    Shopping_Cart.objects.filter(
+                    ShoppingCart.objects.filter(
                         user=self.request.user.id,
                         id=OuterRef("pk")
                     )
@@ -89,13 +89,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         """Для добавления/удаления в/из Избранное"""
         if request.method == 'POST':
-            if Favorite.objects.filter(
-                user=request.user, recipe__id=pk
-            ).exists():
-                return Response(
-                    {'error': 'Рецепт уже добавлен в избранное'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             recipe = get_object_or_404(Recipe, pk=pk)
             instance = Favorite.objects.create(
                 user=request.user,
@@ -121,15 +114,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def cart(self, request, pk):
         """Для добавления/удаления в/из корзину"""
         if request.method == 'POST':
-            if Shopping_Cart.objects.filter(
-                user=request.user, recipe__id=pk
-            ).exists():
-                return Response(
-                    {'error': 'Рецепт уже добавлен в корзину'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             recipe = get_object_or_404(Recipe, pk=pk)
-            instance = Shopping_Cart.objects.create(
+            instance = ShoppingCart.objects.create(
                 user=request.user,
                 recipe=recipe
             )
@@ -138,10 +124,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 data=serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        if Shopping_Cart.objects.filter(
+        if ShoppingCart.objects.filter(
             user=request.user, recipe__id=pk
         ).exists():
-            Shopping_Cart.objects.filter(
+            ShoppingCart.objects.filter(
                 user=request.user, recipe__id=pk
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -155,23 +141,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Выгрузка списка покупок в .txt формате"""
         user = request.user
-        purchases = Shopping_Cart.objects.filter(user=user)
+        purchases = ShoppingCart.objects.filter(user=user)
         file = 'shopping-list.txt'
         with open(file, 'w') as f:
             shop_cart = dict()
             for purchase in purchases:
-                ingredients = Ingredient_to_Recipe.objects.filter(
+                ingredients = IngredientToRecipe.objects.filter(
                     recipe=purchase.recipe.id
                 )
                 for r in ingredients:
                     i = Ingredient.objects.get(pk=r.ingredient.id)
                     point_name = f'{i.name} ({i.measurement_unit})'
                     if point_name in shop_cart.keys():
-                        shop_cart[point_name] += r.cnt
+                        shop_cart[point_name] += r.amount
                     else:
-                        shop_cart[point_name] = r.cnt
+                        shop_cart[point_name] = r.amount
 
-            for name, cnt in shop_cart.items():
-                f.write(f'* {name} - {cnt}\n')
+            for name, amount in shop_cart.items():
+                f.write(f'* {name} - {amount}\n')
 
         return FileResponse(open(file, 'rb'), as_attachment=True)

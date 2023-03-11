@@ -1,9 +1,10 @@
 import base64
 
 import webcolors
+from django.db import transaction
 from django.core.files.base import ContentFile
-from recipes.models import (Favorite, Ingredient, Ingredient_to_Recipe, Recipe,
-                            Shopping_Cart, Tag)
+from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
+                            ShoppingCart, Tag)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -59,13 +60,33 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class ItRSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Ingredient_to_Recipe."""
+    """Сериализатор для модели IngredientToRecipe."""
 
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all()
+    )
 
     class Meta:
-        model = Ingredient_to_Recipe
-        fields = ('id', 'cnt')
+        model = IngredientToRecipe
+        fields = ('id', 'amount')
+
+
+class FULLItRSerializer(serializers.ModelSerializer):
+    """Сериализатор модели IngredientToRecipe"""
+    id = serializers.ReadOnlyField(source="ingredient.id")
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
+
+    class Meta:
+        model = IngredientToRecipe
+        fields = (
+            'id',
+            'name',
+            'measurement_unit',
+            'amount'
+        )
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -85,35 +106,17 @@ class FavoriteSerializer(serializers.ModelSerializer):
         ]
 
 
-class FULLItRSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Ingredient_to_Recipe"""
-    id = serializers.ReadOnlyField(source="ingredient.id")
-    name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(
-        source='ingredient.measurement_unit'
-    )
-
-    class Meta:
-        model = Ingredient_to_Recipe
-        fields = (
-            'id',
-            'name',
-            'measurement_unit',
-            'cnt'
-        )
-
-
 class CartSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Shopping_Cart"""
+    """Сериализатор модели ShoppingCart"""
     class Meta:
-        model = Shopping_Cart
+        model = ShoppingCart
         fields = (
             'recipe',
             'user',
         )
         validators = [
             UniqueTogetherValidator(
-                queryset=Shopping_Cart.objects.all(),
+                queryset=ShoppingCart.objects.all(),
                 fields=("recipe", "user"),
                 message='Этот рецепт уже в корзине'
             )
@@ -125,24 +128,22 @@ class RecipeGETSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_cart = serializers.SerializerMethodField(read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = serializers.SerializerMethodField()
+    ingredients = FULLItRSerializer(
+        many=True,
+        source='recipe'
+    )
     image = Base64ImageField(required=True, allow_null=True)
     tags = TagSerializer(many=True, read_only=True)
 
-    @staticmethod
-    def get_ingredients(obj):
-        ingredients = Ingredient_to_Recipe.objects.filter(recipe=obj)
-        return FULLItRSerializer(ingredients, many=True).data
-
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if not request or request.user.is_anonymous:
             return False
         return request.user.favorite.filter(recipe=obj).exists()
 
     def get_is_in_cart(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if not request or request.user.is_anonymous:
             return False
         return request.user.shopping_cart.filter(recipe=obj).exists()
 
@@ -170,6 +171,90 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
 
+    def validate_ingredients(self, data):
+        ingredients = self.initial_data.get('ingredients')
+        unique_ings = []
+        for ingredient in ingredients:
+            name = ingredient.get('id_ingredient')
+            amount = ingredient.get('amount')
+            if type(amount) is str:
+                if not amount.isdigit():
+                    raise serializers.ValidationError(
+                        'Колличество ингредиента должно быть числом!'
+                    )
+            if int(amount) < 1:
+                raise serializers.ValidationError(
+                    f'Не корректное количество для {name}'
+                )
+            if name in unique_ings:
+                raise serializers.ValidationError(
+                    'Ингредиенты повторяются!'
+                )
+            unique_ings.append(name)
+        return data
+
+    @staticmethod
+    def _create_ingredients(self, ingredients, recipe):
+        IngredientToRecipe.objects.bulk_create(
+            [IngredientToRecipe(
+                recipe=recipe,
+                ingredient_id=ingredient.get('id'),
+                amount=ingredient.get('amount')
+            ) for ingredient in ingredients
+            ]
+        )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        author = self.context.get('request').user
+        if not validated_data.get(
+            'tags'
+        ) or not validated_data.get(
+            'ingredients'
+        ):
+            raise KeyError(
+                'Не предоставлены необходимые данные:'
+                'проверьте поля tags и ingredients)'
+            )
+        tags_data = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(author=author, **validated_data)
+        recipe.tags.set(tags_data)
+        self._create_ingredients(ingredients_data, recipe)
+        return recipe
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        if not validated_data.get(
+            'image'
+        ) or not validated_data.get(
+            'ingredients'
+        ) or not validated_data.get(
+            'text'
+        ) or not validated_data.get(
+            'cooking_time'
+        ):
+            raise KeyError(
+                'Не предоставлены необходимые данные',
+                'проверьте поля image, ingredients, text и cooking_time'
+            )
+        instance.image = validated_data.get('image', instance.image)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
+        instance.tags.clear()
+        tags_data = self.initial_data.get('tags')
+        instance.tags.set(tags_data)
+        IngredientToRecipe.objects.filter(recipe=instance).all().delete()
+        self._create_ingredients(validated_data.get('ingredients'), instance)
+        instance.save()
+        return instance
+
+    def to_representation(self, recipe):
+        return RecipeGETSerializer(recipe).data
+
     class Meta:
         model = Recipe
         fields = (
@@ -183,56 +268,3 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author',
             'pub_date'
         )
-
-    def validate_ingredients(self, data):
-        ingredients = data['ingredients']
-        unique_ings = []
-        for ingredient in ingredients:
-            name = ingredient['id_ingredient']
-            if int(ingredient['cnt']) < 1:
-                raise serializers.ValidationError(
-                    f'Не корректное количество для {name}'
-                )
-            if name not in unique_ings:
-                unique_ings.append(name)
-            else:
-                raise serializers.ValidationError('Ингредиенты повторяются!')
-        return data
-
-    @staticmethod
-    def create_ingredients(self, ingredients, recipe):
-        Ingredient_to_Recipe.objects.bulk_create(
-            [Ingredient_to_Recipe(
-                recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                cnt=ingredient.get('cnt')
-            ) for ingredient in ingredients
-            ]
-        )
-
-    def create(self, validated_data):
-        author = self.context.get('request').user
-        tags_data = validated_data.pop('tags')
-        ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(author=author, **validated_data)
-        recipe.tags.set(tags_data)
-        self.create_ingredients(ingredients_data, recipe)
-        return recipe
-
-    def update(self, instance, validated_data):
-        instance.image = validated_data.get('image', instance.image)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
-        instance.tags.clear()
-        tags_data = self.initial_data.get('tags')
-        instance.tags.set(tags_data)
-        Ingredient_to_Recipe.objects.filter(recipe=instance).all().delete()
-        self.create_ingredients(validated_data.get('ingredients'), instance)
-        instance.save()
-        return instance
-
-    def to_representation(self, recipe):
-        return RecipeGETSerializer(recipe).data
