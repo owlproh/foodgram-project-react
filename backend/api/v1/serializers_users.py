@@ -1,4 +1,3 @@
-from django.contrib.auth.hashers import make_password
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from foodgram.settings import RECIPES_LIMIT
 from recipes.models import Recipe
@@ -36,14 +35,6 @@ class UserPOSTSerializer(UserCreateSerializer):
                 'Пользователь с таким email уже существует'
             )
         return data
-
-    def create(self, validated_data):
-        validated_data['password'] = make_password(
-            validated_data.get('password')
-        )
-        user = User.objects.create(**validated_data)
-        user.save()
-        return user
 
 
 class UserSerializer(UserSerializer):

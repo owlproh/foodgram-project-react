@@ -11,13 +11,14 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         with open(
             f'{settings.DIR_DATA_CSV}\\ingredients.csv',
-            'r',
+            newline="",
             encoding='utf-8'
         ) as file:
-            reader = csv.DictReader(file)
-            Ingredient.objects.bulk_create(
-                Ingredient(**data) for data in reader
-            )
+            reader = csv.DictReader(file, fieldnames=[
+                'name', 'measurement_unit'
+            ])
+            for row in reader:
+                Ingredient.objects.update_or_create(**row)
 
         self.stdout.write(self.style.SUCCESS(
             '==>>>Ингредиенты успешно загружены в БД<<<=='
