@@ -66,6 +66,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
         script: |
+          cd infra/
           sudo docker pull owlproh/backend:latest
           sudo docker pull owlproh/frontend:latest
           sudo docker-compose stop
