@@ -1,12 +1,13 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-DIR_DATA_CSV = os.getcwd()[:-7] + '/data/'
+DIR_DATA_CSV = os.path.join(BASE_DIR, 'data')
 
 SECRET_KEY = '27wx2i7d4j(ctbrku#$8=5t7^0y%&r$31+*vwa4sxn$2e4-02o'
 
@@ -146,7 +147,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

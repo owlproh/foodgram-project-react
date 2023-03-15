@@ -1,6 +1,6 @@
 import csv
 
-from django.conf import settings
+from foodgram.settings import DIR_DATA_CSV
 from django.core.management import BaseCommand
 from recipes.models import Ingredient
 
@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         with open(
-            f'{settings.DIR_DATA_CSV}\\ingredients.csv',
+            f'{DIR_DATA_CSV}/ingredients.csv',
             newline="",
             encoding='utf-8'
         ) as file:

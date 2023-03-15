@@ -9,6 +9,7 @@ services:
 
   backend:
     image: owlproh/backend:latest
+    # build: ../backend/
     restart: always
     volumes:
       - static_value:/app/static/
@@ -20,9 +21,13 @@ services:
 
   frontend:
     image: owlproh/frontend:latest
-    restart: always
+    #build:
+    #  context: ../frontend/
+    #  dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
+    depends_on:
+      - backend
 
   nginx:
     image: nginx:1.21.3-alpine
