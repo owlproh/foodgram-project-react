@@ -31,6 +31,7 @@ class TagViewSet(viewsets.ModelViewSet):
     """Viewset для объектов модели Tag"""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
@@ -46,11 +47,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Recipe.objects.select_related(
            'author'
+        ).prefetch_related(
+            'ingredients',
+            'tags'
         )
-        # .prefetch_related(
-        #     'ingredients',
-        #     'tags'
-        # )
         if self.request.user.is_authenticated:
             queryset = queryset.annotate(
                 is_favorited=Exists(
