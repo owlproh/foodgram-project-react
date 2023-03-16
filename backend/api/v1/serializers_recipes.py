@@ -206,51 +206,44 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        if not validated_data.get(
-            'tags'
-        ) or not validated_data.get(
-            'ingredients'
-        ):
+        try:
+            tags_data = validated_data.pop('tags')
+            ingredients_data = validated_data.pop('ingredients')
+            recipe = Recipe.objects.create(**validated_data)
+            recipe.tags.set(tags_data)
+            self._create_ingredients(ingredients_data, recipe)
+            return recipe
+        except Exception:
             raise KeyError(
                 'Не предоставлены необходимые данные:'
                 'проверьте поля tags и ingredients)'
             )
-        tags_data = validated_data.pop('tags')
-        ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags_data)
-        self._create_ingredients(ingredients_data, recipe)
-        return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        if not validated_data.get(
-            'image'
-        ) or not validated_data.get(
-            'ingredients'
-        ) or not validated_data.get(
-            'text'
-        ) or not validated_data.get(
-            'cooking_time'
-        ):
+        try:
+            instance.image = validated_data.get('image', instance.image)
+            instance.name = validated_data.get('name', instance.name)
+            instance.text = validated_data.get('text', instance.text)
+            instance.cooking_time = validated_data.get(
+                'cooking_time', instance.cooking_time
+            )
+            instance.tags.clear()
+            instance.ingredients.clear()
+            tags_data = self.validated_data.get('tags')
+            instance.tags.set(tags_data)
+            IngredientToRecipe.objects.filter(recipe=instance).all().delete()
+            self._create_ingredients(
+                validated_data.get('ingredients'),
+                instance
+            )
+            instance.save()
+            return instance
+        except Exception:
             raise KeyError(
                 'Не предоставлены необходимые данные',
                 'проверьте поля image, ingredients, text и cooking_time'
             )
-        instance.image = validated_data.get('image', instance.image)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
-        instance.tags.clear()
-        instance.ingredients.clear()
-        tags_data = self.validated_data.get('tags')
-        instance.tags.set(tags_data)
-        IngredientToRecipe.objects.filter(recipe=instance).all().delete()
-        self._create_ingredients(validated_data.get('ingredients'), instance)
-        instance.save()
-        return instance
 
     def to_representation(self, recipe):
         return RecipeGETSerializer(recipe, context=self.context).data
