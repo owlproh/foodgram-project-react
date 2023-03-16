@@ -37,6 +37,7 @@ class Base64ImageField(serializers.ImageField):
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор модели Tag"""
     color = Hex2NameColor()
+    queryset = Tag.objects.all()
 
     class Meta:
         model = Tag
