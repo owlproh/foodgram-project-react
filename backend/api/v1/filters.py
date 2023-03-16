@@ -1,11 +1,14 @@
-from django_filters import AllValuesMultipleFilter, CharFilter, FilterSet
+from django_filters import CharFilter, FilterSet
 from django_filters import rest_framework as filters
-
-from recipes.models import Ingredient, Recipe
+from recipes.models import Ingredient, Recipe, Tag
 
 
 class RecipeFilter(FilterSet):
-    tags = AllValuesMultipleFilter(field_name="tags__slug")
+    tags = filters.ModelMultipleChoiceFilter(
+        field_name="tags__slug",
+        to_field_name="slug",
+        queryset=Tag.objects.all()
+    )
     is_in_shopping_cart = filters.BooleanFilter(
         field_name="is_in_shopping_cart",
         method="filter"

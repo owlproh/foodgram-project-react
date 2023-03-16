@@ -44,6 +44,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering = ('-pub_date',)
 
     def get_queryset(self):
+        queryset = Recipe.objects.select_related(
+           'author'
+        )
+        # .prefetch_related(
+        #     'ingredients',
+        #     'tags'
+        # )
+        if self.request.user.is_authenticated:
+            queryset = queryset.annotate(
+                is_favorited=Exists(
+                    Favorite.objects.filter(
+                        user=self.request.user,
+                        recipe=OuterRef('pk')
+                    )
+                ),
+                is_in_shopping_cart=Exists(
+                    ShoppingCart.objects.filter(
+                        user=self.request.user,
+                        recipe=OuterRef('pk')
+                    )
+                )
+            )
+        return queryset
+        '''
         return (
             super().get_queryset().annotate(
                 is_in_cart=Exists(
@@ -59,7 +83,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     )
                 ),
             )
-        )
+        ) '''
 
     def get_serializer_class(self):
         """Определяет какой сериализатор нужен
