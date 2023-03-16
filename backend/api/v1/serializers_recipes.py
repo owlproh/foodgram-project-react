@@ -37,7 +37,6 @@ class Base64ImageField(serializers.ImageField):
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор модели Tag"""
     color = Hex2NameColor()
-    queryset = Tag.objects.all()
 
     class Meta:
         model = Tag
@@ -207,7 +206,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        author = self.context.get('request').user
         if not validated_data.get(
             'tags'
         ) or not validated_data.get(
@@ -219,7 +217,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(author=author, **validated_data)
+        recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
         self._create_ingredients(ingredients_data, recipe)
         return recipe
@@ -246,7 +244,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time
         )
         instance.tags.clear()
-        tags_data = self.initial_data.get('tags')
+        instance.ingredients.clear()
+        tags_data = self.validated_data.get('tags')
         instance.tags.set(tags_data)
         IngredientToRecipe.objects.filter(recipe=instance).all().delete()
         self._create_ingredients(validated_data.get('ingredients'), instance)
@@ -254,7 +253,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, recipe):
-        return RecipeGETSerializer(recipe).data
+        return RecipeGETSerializer(recipe, context=self.context).data
 
     class Meta:
         model = Recipe
