@@ -10,7 +10,7 @@ services:
   backend:
     image: owlproh/backend:latest
     # build: ../backend/
-    restart: always
+    # restart: always
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/
