@@ -1,10 +1,10 @@
-from django.http import FileResponse
 from django.db.models import Exists, OuterRef
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -21,7 +21,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny,)
     pagination_class = None
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter,)
+    filter_backends = [DjangoFilterBackend]
     filtreset_class = IngredientFilter
     search_fields = ('^name',)
     ordering_fields = ('^name',)
@@ -44,47 +44,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterser_class = RecipeFilter
     ordering = ('-pub_date',)
 
-    def get_queryset(self):
-        queryset = Recipe.objects.select_related(
-           'author'
-        ).prefetch_related(
-            'ingredients',
-            'tags'
-        )
-        if self.request.user.is_authenticated:
-            queryset = queryset.annotate(
-                is_favorited=Exists(
-                    Favorite.objects.filter(
-                        user=self.request.user,
-                        recipe=OuterRef('pk')
-                    )
-                ),
-                is_in_shopping_cart=Exists(
-                    ShoppingCart.objects.filter(
-                        user=self.request.user,
-                        recipe=OuterRef('pk')
-                    )
-                )
-            )
-        return queryset
-        '''
-        return (
-            super().get_queryset().annotate(
-                is_in_cart=Exists(
-                    ShoppingCart.objects.filter(
-                        user=self.request.user.id,
-                        id=OuterRef("pk")
-                    )
-                ),
-                is_favorited=Exists(
-                    Favorite.objects.filter(
-                        user=self.request.user.id,
-                        id=OuterRef("pk")
-                    )
-                ),
-            )
-        ) '''
-
     def get_serializer_class(self):
         """Определяет какой сериализатор нужен
          (в зависимости от метода запроса)"""
@@ -92,15 +51,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeGETSerializer
         return RecipeSerializer
 
+    def get_queryset(self):
+        queryset = Recipe.objects.select_related(
+           'author'
+        ).prefetch_related(
+            'ingredients',
+            'tags'
+        )
+        user = self.request.user
+        if user.is_authenticated:
+            queryset = queryset.annotate(
+                is_favorited=Exists(
+                    Favorite.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                ),
+                is_in_shopping_cart=Exists(
+                    ShoppingCart.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                )
+            )
+        return queryset
+
     def perform_create(self, serializer):
         """"Передает в поле author данные о пользователе"""
-        serializer.is_valid(raise_exception=True)
+        # serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
     def perform_destroy(self, instance):
         """Удаляет объект класса рецепт"""
-        if self.request.user != instance.author:
-            raise Exception('Только автор может удалять рецепт')
+        # if self.request.user != instance.author:
+        #    raise Exception('Только автор может удалять рецепт')
         instance.delete()
 
     @action(
