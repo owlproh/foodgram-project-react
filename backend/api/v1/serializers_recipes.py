@@ -168,7 +168,11 @@ class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe"""
     ingredients = ItRSerializer(many=True)
     image = Base64ImageField(required=True, allow_null=True)
-    tags = TagSerializer(many=True, read_only=True)
+    # tags = TagSerializer(many=True, read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tags.objects.all(),
+        many=True,
+    )
     author = UserSerializer(read_only=True)
 
     def validate_ingredients(self, data):
