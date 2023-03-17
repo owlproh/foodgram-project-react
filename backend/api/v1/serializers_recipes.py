@@ -226,9 +226,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'проверьте все поля формы'
             )
 
-    def to_representation(self, recipe):
-        return RecipeGETSerializer(recipe, context=self.context).data
-
     def validate(self, data):
         ingredients = self.data.get('ingredients')
         unique_ings = []
@@ -250,6 +247,9 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
             unique_ings.append(name)
         return data
+
+    def to_representation(self, recipe):
+        return RecipeGETSerializer(recipe, context=self.context).data
 
     class Meta:
         model = Recipe
