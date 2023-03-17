@@ -196,7 +196,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                     'Ингредиенты повторяются!'
                 )
             unique_ings.append(name)
-        data.is_valid(raise_exception=True)
+        # data.is_valid(raise_exception=True)
         return data
 
     def _create_ingredients(self, ingredients, recipe):
