@@ -24,7 +24,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filtreset_class = IngredientFilter
     search_fields = ('^name',)
-    ordering_fields = ('^name',)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -83,8 +82,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Удаляет объект класса рецепт"""
-        # if self.request.user != instance.author:
-        #    raise Exception('Только автор может удалять рецепт')
         instance.delete()
 
     @action(
