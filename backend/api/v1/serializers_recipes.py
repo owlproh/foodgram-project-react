@@ -196,6 +196,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'проверьте поля tags и ingredients)'
             )
         recipe = Recipe.objects.create(**validated_data)
+        recipe.save()
         recipe.tags.set(tags_data)
         self._create_ingredients(ingredients_data, recipe)
         return recipe
@@ -209,9 +210,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.cooking_time = validated_data.get(
                 'cooking_time', instance.cooking_time
             )
-            tags_data = self.validated_data.get('tags')
             instance.tags.clear()
-            instance.ingredients.clear()
+            tags_data = self.initial_data.get('tags')
             instance.tags.set(tags_data)
             IngredientToRecipe.objects.filter(recipe=instance).all().delete()
             self._create_ingredients(
