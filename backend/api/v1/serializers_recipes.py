@@ -176,7 +176,6 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     author = UserSerializer(read_only=True)
 
-    @staticmethod
     def _create_ingredients(self, ingredients, recipe):
         IngredientToRecipe.objects.bulk_create(
             [IngredientToRecipe(
