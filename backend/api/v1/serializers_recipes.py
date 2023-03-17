@@ -172,10 +172,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
 
     def validate_ingredients(self, data):
-        ingredients = self.initial_data.get('ingredients')
+        ingredients = self.data.get('ingredients')
         unique_ings = []
         for ingredient in ingredients:
-            name = ingredient.get('id_ingredient')
+            name = ingredient.get('id')
             amount = ingredient.get('amount')
             if type(amount) is str:
                 if not amount.isdigit():
@@ -198,10 +198,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientToRecipe.objects.bulk_create(
             [IngredientToRecipe(
                 recipe=recipe,
-                ingredient_id=ingredient.get('id'),
+                ingredient=ingredient.get('id'),
                 amount=ingredient.get('amount')
-            ) for ingredient in ingredients
-            ]
+            ) for ingredient in ingredients]
         )
 
     @transaction.atomic
@@ -209,15 +208,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         try:
             tags_data = validated_data.pop('tags')
             ingredients_data = validated_data.pop('ingredients')
-            recipe = Recipe.objects.create(**validated_data)
-            recipe.tags.set(tags_data)
-            self._create_ingredients(ingredients_data, recipe)
-            return recipe
         except Exception:
             raise KeyError(
                 'Не предоставлены необходимые данные:'
                 'проверьте поля tags и ingredients)'
             )
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags_data)
+        self._create_ingredients(ingredients_data, recipe)
+        return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -228,9 +227,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.cooking_time = validated_data.get(
                 'cooking_time', instance.cooking_time
             )
+            tags_data = self.validated_data.get('tags')
             instance.tags.clear()
             instance.ingredients.clear()
-            tags_data = self.validated_data.get('tags')
             instance.tags.set(tags_data)
             IngredientToRecipe.objects.filter(recipe=instance).all().delete()
             self._create_ingredients(
@@ -242,7 +241,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         except Exception:
             raise KeyError(
                 'Не предоставлены необходимые данные',
-                'проверьте поля image, ingredients, text и cooking_time'
+                'проверьте все поля формы'
             )
 
     def to_representation(self, recipe):
