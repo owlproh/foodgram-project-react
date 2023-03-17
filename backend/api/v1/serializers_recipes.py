@@ -176,6 +176,28 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     author = UserSerializer(read_only=True)
 
+    def validate_ingredients(self, data):
+        ingredients = self.data.get('ingredients')
+        unique_ings = []
+        for ingredient in ingredients:
+            name = ingredient.get('id')
+            amount = ingredient.get('amount')
+            if type(amount) is str:
+                if not amount.isdigit():
+                    raise serializers.ValidationError(
+                        'Колличество ингредиента должно быть числом!'
+                    )
+            if int(amount) < 1:
+                raise serializers.ValidationError(
+                    f'Не корректное количество для {name}'
+                )
+            if name in unique_ings:
+                raise serializers.ValidationError(
+                    'Ингредиенты повторяются!'
+                )
+            unique_ings.append(name)
+        return data
+
     def _create_ingredients(self, ingredients, recipe):
         IngredientToRecipe.objects.bulk_create(
             [IngredientToRecipe(
