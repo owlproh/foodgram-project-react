@@ -78,7 +78,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """"Передает в поле author данные о пользователе"""
-        serializer.is_valid(raise_exception=True)
+        # serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
     def perform_destroy(self, instance):
