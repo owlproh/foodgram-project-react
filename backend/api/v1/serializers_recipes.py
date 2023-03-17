@@ -168,35 +168,13 @@ class RecipeGETSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe"""
     ingredients = ItRSerializer(many=True)
-    image = Base64ImageField(required=True, allow_null=True)
+    image = Base64ImageField()  # required=True, allow_null=True)
     # tags = TagSerializer(many=True, read_only=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
     )
     author = UserSerializer(read_only=True)
-
-    def validate_ingredients(self, data):
-        ingredients = self.data.get('ingredients')
-        unique_ings = []
-        for ingredient in ingredients:
-            name = ingredient.get('id')
-            amount = ingredient.get('amount')
-            if type(amount) is str:
-                if not amount.isdigit():
-                    raise serializers.ValidationError(
-                        'Колличество ингредиента должно быть числом!'
-                    )
-            if int(amount) < 1:
-                raise serializers.ValidationError(
-                    f'Не корректное количество для {name}'
-                )
-            if name in unique_ings:
-                raise serializers.ValidationError(
-                    'Ингредиенты повторяются!'
-                )
-            unique_ings.append(name)
-        return data
 
     @staticmethod
     def _create_ingredients(self, ingredients, recipe):
