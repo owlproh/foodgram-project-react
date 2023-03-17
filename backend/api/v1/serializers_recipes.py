@@ -176,7 +176,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
 
     def validate_ingredients(self, data):
-        ingredients = self.data.get('ingredients')
+        ingredients = self.initial_data.get('ingredients')
         unique_ings = []
         for ingredient in ingredients:
             name = ingredient.get('id')
