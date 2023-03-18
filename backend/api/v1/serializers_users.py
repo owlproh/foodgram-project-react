@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from foodgram.settings import RECIPES_LIMIT
@@ -6,6 +7,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscription
 
+User = get_user_model()
 taboo_logins = ('me', 'admin', 'user')
 
 
@@ -26,6 +28,17 @@ class UserPOSTSerializer(UserCreateSerializer):
                 'Пользователь с таким email уже существует'
             )
         return data
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            username=validated_data.get('username'),
+            email=validated_data.get('email'),
+            first_name=validated_data.get('first_name'),
+            last_name=validated_data.get('last_name')
+        )
+        user.set_password(validated_data.get('password'))
+        user.save()
+        return user
 
     class Meta:
         model = User
