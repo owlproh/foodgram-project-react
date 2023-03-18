@@ -26,7 +26,7 @@ class UserPOSTSerializer(UserCreateSerializer):
                 'Пользователь с таким email уже существует'
             )
         return data
-
+"""
     def create(self, validated_data):
         user = User.objects.create(
             username=validated_data.get('username'),
@@ -37,7 +37,7 @@ class UserPOSTSerializer(UserCreateSerializer):
         user.set_password(validated_data.get('password'))
         user.save()
         return user
-
+"""
     class Meta:
         model = User
         fields = (
