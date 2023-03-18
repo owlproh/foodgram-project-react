@@ -21,7 +21,7 @@ services:
 
   frontend:
     image: owlproh/frontend:latest
-    #build:
+    # build:
     #  context: ../frontend/
     #  dockerfile: Dockerfile
     volumes:

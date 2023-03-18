@@ -21,5 +21,5 @@ class Command(BaseCommand):
                 Ingredient.objects.update_or_create(**row)
 
         self.stdout.write(self.style.SUCCESS(
-            '==>>>Ингредиенты успешно загружены в БД<<<=='
+            '==>>> Ингредиенты успешно загружены в БД <<<=='
         ))

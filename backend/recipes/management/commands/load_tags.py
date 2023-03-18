@@ -17,5 +17,5 @@ class Command(BaseCommand):
         Tag.objects.bulk_create(Tag(**tag) for tag in data)
 
         self.stdout.write(self.style.SUCCESS(
-            'Стандартные теги загружены в БД'
+            '==>> Стандартные теги успешно загружены в БД <<=='
         ))
