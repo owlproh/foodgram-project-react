@@ -89,41 +89,6 @@ class FULLItRSerializer(serializers.ModelSerializer):
         )
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Favorite"""
-    class Meta:
-        model = Favorite
-        fields = (
-            'id',
-            'recipe',
-            'user',
-        )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=('user', 'recipe'),
-                message='Этот рецепт уже добавлен в Избранное'
-            )
-        ]
-
-
-class CartSerializer(serializers.ModelSerializer):
-    """Сериализатор модели ShoppingCart"""
-    class Meta:
-        model = ShoppingCart
-        fields = (
-            'recipe',
-            'user',
-        )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=ShoppingCart.objects.all(),
-                fields=("recipe", "user"),
-                message='Этот рецепт уже в корзине'
-            )
-        ]
-
-
 class RecipeGETSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe для GET-запросов"""
     is_favorited = serializers.SerializerMethodField(read_only=True)
@@ -263,3 +228,50 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author',
             'pub_date'
         )
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Favorite"""
+    def to_representation(self, instance):
+        return RecipeGETSerializer(
+            instance=instance.recipe,
+            context=self.context
+        ).data
+
+    class Meta:
+        model = Favorite
+        fields = (
+            'id',
+            'recipe',
+            'user',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Этот рецепт уже добавлен в Избранное'
+            )
+        ]
+
+
+class CartSerializer(serializers.ModelSerializer):
+    """Сериализатор модели ShoppingCart"""
+    def to_representation(self, instance):
+        return RecipeGETSerializer(
+            instance=instance.recipe,
+            context=self.context
+        ).data
+
+    class Meta:
+        model = ShoppingCart
+        fields = (
+            'recipe',
+            'user',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=("recipe", "user"),
+                message='Этот рецепт уже в корзине'
+            )
+        ]
