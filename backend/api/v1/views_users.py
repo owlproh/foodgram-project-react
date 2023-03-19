@@ -13,6 +13,7 @@ from .serializers_users import (FollowingSerializer, FollowingShowSerializer,
 class UsersViewSet(UserViewSet):
     """Viewset для объектов модели User"""
     queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_serializer_class(self):
