@@ -126,8 +126,8 @@ class CartSerializer(serializers.ModelSerializer):
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe для GET-запросов"""
-    is_favorited = serializers.BooleanField(read_only=True)  # serializers.SerializerMethodField(read_only=True)
-    is_in_cart = serializers.BooleanField(read_only=True)  # serializers.SerializerMethodField(read_only=True)
+    is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_cart = serializers.SerializerMethodField(read_only=True)
     author = UserSerializer(read_only=True)
     ingredients = FULLItRSerializer(
         many=True,
@@ -135,6 +135,18 @@ class RecipeGETSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField(required=True, allow_null=True)
     tags = TagSerializer(many=True, read_only=True)
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return request.user.favorite.filter(recipe=obj).exists()
+
+    def get_is_in_cart(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return request.user.shopping_cart.filter(recipe=obj).exists()
 
     class Meta:
         model = Recipe
