@@ -127,7 +127,7 @@ class FollowingShowRecipeSerializer(serializers.ModelSerializer):
 class FollowingShowSerializer(serializers.ModelSerializer):
     """Сериализатор для подписчиков"""
     recipes = serializers.SerializerMethodField()
-    recipes_cnt = serializers.SerializerMethodField()
+    count_recipes = serializers.SerializerMethodField()
     is_follower = serializers.SerializerMethodField(read_only=True)
 
     def get_recipes(self, obj):
@@ -139,7 +139,7 @@ class FollowingShowSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
-    def get_recipes_cnt(self, obj):
+    def get_count_recipes(self, obj):
         """Считаем количество рецептов"""
         return obj.recipes.count()
 
@@ -159,5 +159,5 @@ class FollowingShowSerializer(serializers.ModelSerializer):
             'email',
             'is_follower',
             'recipes',
-            'recipes_cnt'
+            'count_recipes'
         )
