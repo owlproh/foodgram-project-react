@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from users.models import Subscription, User
 
 from .serializers_users import (FollowingSerializer, FollowingShowSerializer,
-                                UserSerializer, UserPOSTSerializer)
+                                UserSerializer)
 
 
 class UsersViewSet(UserViewSet):
@@ -15,11 +15,6 @@ class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return UserPOSTSerializer
-        return UserSerializer
 
     @action(
         methods=['GET', 'PATCH'],

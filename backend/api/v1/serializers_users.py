@@ -68,9 +68,6 @@ class UserPOSTSerializer(UserCreateSerializer):
         user.save()
         return user
 
-    def to_representation(self, user):
-        return UserSerializer(user=user, context=self.context).data
-
     class Meta:
         model = User
         fields = (
