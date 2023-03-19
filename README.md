@@ -49,7 +49,7 @@ password: admin
 #### Технологии 
 
 - [Python 3.7+](https://www.python.org/)
-- [Django 2.2.16](https://www.djangoproject.com)
+- [Django](https://www.djangoproject.com)
 - [Django Rest Framework 3.12.4](https://www.django-rest-framework.org)
 - [Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/)
 - [PostgreSQL](https://www.postgresql.org/)

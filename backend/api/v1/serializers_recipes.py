@@ -92,7 +92,7 @@ class FULLItRSerializer(serializers.ModelSerializer):
 class RecipeGETSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe для GET-запросов"""
     is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_cart = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     author = UserSerializer(read_only=True)
     ingredients = FULLItRSerializer(
         many=True,
@@ -107,7 +107,7 @@ class RecipeGETSerializer(serializers.ModelSerializer):
             return False
         return request.user.favorite.filter(recipe=obj).exists()
 
-    def get_is_in_cart(self, obj):
+    def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
@@ -124,7 +124,7 @@ class RecipeGETSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
             'is_favorited',
-            'is_in_cart',
+            'is_in_shopping_cart',
             'author',
             'pub_date'
         )
