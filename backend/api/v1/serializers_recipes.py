@@ -232,11 +232,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор модели Favorite"""
-    def to_representation(self, instance):
-        return RecipeGETSerializer(
-            instance=instance.recipe,
-            context=self.context
-        ).data
 
     class Meta:
         model = Favorite
@@ -256,11 +251,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class CartSerializer(serializers.ModelSerializer):
     """Сериализатор модели ShoppingCart"""
-    def to_representation(self, instance):
-        return RecipeGETSerializer(
-            instance=instance.recipe,
-            context=self.context
-        ).data
 
     class Meta:
         model = ShoppingCart
