@@ -11,6 +11,35 @@ User = get_user_model()
 taboo_logins = ('me', 'admin', 'user')
 
 
+class UserSerializer(UserSerializer):
+    """Сериализатор модели User"""
+    is_follower = serializers.SerializerMethodField(read_only=True)
+
+    def validate(self, data):
+        if data.get('username') in taboo_logins:
+            raise serializers.ValidationError(
+                'Использовать такой логин запрещено'
+            )
+        return data
+
+    def get_is_follower(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return obj.author.filter(follower=user).exists()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'is_follower'
+        )
+
+
 class UserPOSTSerializer(UserCreateSerializer):
     """Сериализатор модели User для POST-запросов"""
 
@@ -40,6 +69,9 @@ class UserPOSTSerializer(UserCreateSerializer):
         user.save()
         return user
 
+    def to_representation(self, instance):
+        return UserSerializer(instance, context=self.context).data
+
     class Meta:
         model = User
         fields = (
@@ -48,35 +80,6 @@ class UserPOSTSerializer(UserCreateSerializer):
             'first_name',
             'last_name',
             'email'
-        )
-
-
-class UserSerializer(UserSerializer):
-    """Сериализатор модели User"""
-    is_follower = serializers.SerializerMethodField(read_only=True)
-
-    def validate(self, data):
-        if data.get('username') in taboo_logins:
-            raise serializers.ValidationError(
-                'Использовать такой логин запрещено'
-            )
-        return data
-
-    def get_is_follower(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return obj.author.filter(follower=user).exists()
-
-    class Meta:
-        model = User
-        fields = (
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'is_follower'
         )
 
 

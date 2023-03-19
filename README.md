@@ -195,13 +195,54 @@ POST `api/users/`:
 GET `api/users/`:
 ```
 Response:
-{"count":5,"next":null,"previous":null,"results":[
-    {"id":1,"username":"admin","first_name":"admin","last_name":"admin","email":"admin@mail.ru","is_follower":false},
-    {"id":3,"username":"Евгенич","first_name":"Владислав","last_name":"Чупин","email":"210nk@mail.ru","is_follower":false},
-    {"id":4,"username":"m2","first_name":"f2","last_name":"l2","email":"e2@mail.ru","is_follower":false},
-    {"id":2,"username":"m1","first_name":"f1","last_name":"l1","email":"e1@mail.ru","is_follower":false},
-    {"id":5,"username":"m3","first_name":"f3","last_name":"l3","email":"e3@mail.ru","is_follower":false}
-]}
+{
+    "count":5,
+    "next":null,
+    "previous":null,
+    "results":[
+    
+        {
+            "id":1,
+            "username":"admin",
+            "first_name":"admin",
+            "last_name":"admin",
+            "email":"admin@mail.ru",
+            "is_follower":false
+        },
+        {
+            "id":3,
+            "username":"Евгенич",
+            "first_name":"Владислав",
+            "last_name":"Чупин",
+            "email":"210nk@mail.ru",
+            "is_follower":false
+        },
+        {
+            "id":4,
+            "username":"m2",
+            "first_name":"f2",
+            "last_name":"l2",
+            "email":"e2@mail.ru",
+            "is_follower":false
+        },
+        {
+            "id":2,
+            "username":"m1",
+            "first_name":"f1",
+            "last_name":"l1",
+            "email":"e1@mail.ru",
+            "is_follower":false
+        },
+        {
+            "id":5,
+            "username":"m3",
+            "first_name":"f3",
+            "last_name":"l3",
+            "email":"e3@mail.ru",
+            "is_follower":false
+        }
+    ]
+}
 ```
 
 POST `api/auth/token/login/`:
@@ -214,18 +255,45 @@ POST `api/auth/token/login/`:
 ```
 Response:
 
-{"auth_token":"8a1b347a2a5c8889887c83eed77ea098d726bee7"}
+{
+    "auth_token":"8a1b347a2a5c8889887c83eed77ea098d726bee7"
+}
 ```
 
 GET `api/tags/`:
 ```
 Response:
 [
-    {"id":1,"name":"Завтрак","color":"#E26C2D","slug":"breakfast"},
-    {"id":2,"name":"Обед","color":"#49B64E","slug":"dinner"},
-    {"id":5,"name":"Острое","color":"#cc0000","slug":"sharp"},
-    {"id":4,"name":"Сладенькое","color":"#c9a2bf","slug":"sweet"},
-    {"id":3,"name":"Ужин","color":"#8775D2","slug":"supper"}
+    {
+        "id":1,
+        "name":"Завтрак",
+        "color":"#E26C2D",
+        "slug":"breakfast"
+    },
+    {
+        "id":2,
+        "name":"Обед",
+        "color":"#49B64E",
+        "slug":"dinner"
+    },
+    {
+        "id":5,
+        "name":"Острое",
+        "color":"#cc0000",
+        "slug":"sharp"
+    },
+    {
+        "id":4,
+        "name":"Сладенькое",
+        "color":"#c9a2bf",
+        "slug":"sweet"
+    },
+    {
+        "id":3,
+        "name":"Ужин",
+        "color":"#8775D2",
+        "slug":"supper"
+    }
 ]
 ```
 
