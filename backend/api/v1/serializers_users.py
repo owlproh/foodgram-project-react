@@ -69,9 +69,6 @@ class UserPOSTSerializer(UserCreateSerializer):
         user.save()
         return user
 
-    def to_representation(self, instance):
-        return UserSerializer(instance, context=self.context).data
-
     class Meta:
         model = User
         fields = (
@@ -81,6 +78,7 @@ class UserPOSTSerializer(UserCreateSerializer):
             'last_name',
             'email'
         )
+        extra_kwargs = {'password': {'write_only': True}}
 
 
 class FollowingSerializer(serializers.ModelSerializer):
