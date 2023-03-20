@@ -27,7 +27,7 @@ class RecipeFilter(FilterSet):
         user = self.request.user
         if not user.is_anonymous:
             if self.request.query_params.get("is_favorited"):
-                qs = qs.filter(recipe__user=user)
+                qs = qs.filter(favorite__user=user)
             if self.request.query_params.get("is_in_shopping_cart"):
                 qs = qs.filter(recipe__user=user)
         return qs
