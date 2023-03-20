@@ -1,8 +1,6 @@
-from django.contrib.auth import get_user_model
 from django_filters.rest_framework import FilterSet, filters
 from recipes.models import Ingredient, Recipe, Tag
-
-User = get_user_model()
+from users.models import User
 
 
 class RecipeFilter(FilterSet):
@@ -15,30 +13,29 @@ class RecipeFilter(FilterSet):
         queryset=User.objects.all()
     )
     is_in_shopping_cart = filters.BooleanFilter(
-        field_name="is_in_shopping_cart",
-        method="filter"
+        method="filter_shopper"
     )
     is_favorited = filters.BooleanFilter(
-        field_name="is_favorited",
-        method="filter"
+        method="filter_favors"
     )
 
-    def filter(self, qs, name, value):
+    def filter_shopper(self, queryset, name, value):
         user = self.request.user
-        if not user.is_anonymous:
-            if self.request.query_params.get("is_favorited"):
-                qs = qs.filter(favorite__user=user)
-            if self.request.query_params.get("is_in_shopping_cart"):
-                qs = qs.filter(recipe__user=user)
-        return qs
+        if value and not user.is_anonymous:
+            return queryset.filter(shopping_cart__user=user)
+        return queryset
+
+    def filter_favors(self, queryset, name, value):
+        user = self.request.user
+        if value and not user.is_anonymous:
+            return queryset.filter(favorite__user=user)
+        return queryset
 
     class Meta:
         model = Recipe
         fields = (
             "tags",
             "author",
-            "is_favorited",
-            "is_in_shopping_cart",
         )
 
 
@@ -47,4 +44,4 @@ class IngredientFilter(FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = ["name"]
+        fields = ("name",)
