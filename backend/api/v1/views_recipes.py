@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
-from rest_framework import permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -21,9 +21,10 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny,)
     pagination_class = None
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter,)
     filtreset_class = IngredientFilter
     search_fields = ('^name',)
+    ordering_fields = ('^name',)
 
 
 class TagViewSet(viewsets.ModelViewSet):

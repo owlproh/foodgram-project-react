@@ -168,7 +168,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 recipe=recipe,
                 ingredient=ingredient.get('id'),
                 amount=ingredient.get('amount')
-            ) for ingredient in ingredients]
+            ) for ingredient in ingredients
+            ]
         )
 
     @transaction.atomic
@@ -236,7 +237,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = (
-            'id',
             'recipe',
             'user',
         )

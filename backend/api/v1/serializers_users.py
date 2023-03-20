@@ -1,13 +1,11 @@
-from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from foodgram.settings import RECIPES_LIMIT
 from recipes.models import Recipe
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from users.models import Subscription
+from users.models import User, Subscription
 
-User = get_user_model()
 taboo_logins = ('me', 'admin', 'user')
 
 
@@ -23,14 +21,15 @@ class UserSerializer(UserSerializer):
         return data
 
     def get_is_follower(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
             return False
-        return obj.author.filter(follower=user).exists()
+        return obj.author.filter(follower=request.user).exists()
 
     class Meta:
         model = User
         fields = (
+            'id',
             'username',
             'first_name',
             'last_name',
@@ -71,6 +70,7 @@ class UserPOSTSerializer(UserCreateSerializer):
     class Meta:
         model = User
         fields = (
+            'id',
             'username',
             'password',
             'first_name',
@@ -82,21 +82,6 @@ class UserPOSTSerializer(UserCreateSerializer):
 
 class FollowingSerializer(serializers.ModelSerializer):
     """Сериализатор модели Subscriptions"""
-    class Meta:
-        model = Subscription
-        fields = (
-            'id',
-            'follower',
-            'author'
-        )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=('follower', 'author'),
-                message='Вы уже подписаны на этого автора'
-            )
-        ]
-
     def validate(self, data):
         if not data.get('follower'):
             raise KeyError(
@@ -107,6 +92,20 @@ class FollowingSerializer(serializers.ModelSerializer):
                 'Не пытайтесь накрутить подписчиков!'
             )
         return data
+
+    class Meta:
+        model = Subscription
+        fields = (
+            'follower',
+            'author'
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscription.objects.all(),
+                fields=('follower', 'author'),
+                message='Вы уже подписаны на этого автора'
+            )
+        ]
 
 
 class FollowingShowRecipeSerializer(serializers.ModelSerializer):
@@ -132,10 +131,9 @@ class FollowingShowSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         """Получаем рецепты автора"""
-        request = self.context.get('request')
+        recipes_author = obj.recipes.all()[:RECIPES_LIMIT]
         return FollowingShowRecipeSerializer(
-            Recipe.objects.filter(author=obj)[:RECIPES_LIMIT],
-            context={'request': request},
+            recipes_author,
             many=True
         ).data
 
