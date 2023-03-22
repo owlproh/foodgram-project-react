@@ -1,7 +1,9 @@
 from django.db import models
-from users.models import User
+from django.contrib.auth import get_user_model
 from foodgram.settings import TEXT_SL
 from django.core.validators import MinValueValidator, RegexValidator
+
+User = get_user_model()
 
 
 class Tag(models.Model):
@@ -91,6 +93,7 @@ class Recipe(models.Model):
         help_text='Добавьте фото к Вашему рецепту',
     )
     name = models.CharField(
+        unique=True,
         max_length=200,
         db_index=True,
         verbose_name='Название',
@@ -181,14 +184,14 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_cart',
+        related_name='shopping_cart_r',
         verbose_name='Рецепт',
         help_text='Выберите рецепт(ы)'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shopping_cart',
+        related_name='shopping_cart_u',
         verbose_name='Пользователь',
         help_text='Выберите пользователя'
     )

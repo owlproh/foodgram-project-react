@@ -4,14 +4,14 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
-from .serializers_recipes import (CartSerializer, FavoriteSerializer,
-                                  IngredientSerializer, RecipeGETSerializer,
+from .serializers_recipes import (CartSerializer, IngredientSerializer,
+                                  RecipeGETSerializer, RecipeInfoSerializer,
                                   RecipeSerializer, TagSerializer)
 
 
@@ -19,12 +19,11 @@ class IngredientViewSet(viewsets.ModelViewSet):
     """Viewset для объектов модели Ingredient"""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = None
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter,)
+    filter_backends = [DjangoFilterBackend]
     filtreset_class = IngredientFilter
-    search_fields = ('^name',)
-    ordering_fields = ('^name',)
+    search_fields = ['name']
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -39,8 +38,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Viewset для объектов модели Recipe"""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsOwnerOrReadOnly, )
+    filter_backends = (DjangoFilterBackend, )
     filterser_class = RecipeFilter
     ordering = ('-pub_date',)
 
@@ -95,14 +94,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         """Для добавления/удаления в/из Избранное"""
         if request.method == 'POST':
-            recipe = get_object_or_404(Recipe, pk=pk)
-            instance = Favorite.objects.create(
+            recipe = get_object_or_404(Recipe, id=pk)
+            Favorite.objects.create(
                 user=request.user,
                 recipe=recipe
             )
-            serializer = FavoriteSerializer(instance)
+            serializer = RecipeInfoSerializer(recipe)
             return Response(
-                data=serializer.data,
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
         if Favorite.objects.filter(user=request.user, recipe__id=pk).exists():
@@ -120,7 +119,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def cart(self, request, pk):
         """Для добавления/удаления в/из корзину"""
         if request.method == 'POST':
-            recipe = get_object_or_404(Recipe, pk=pk)
+            recipe = get_object_or_404(Recipe, id=pk)
             instance = ShoppingCart.objects.create(
                 user=request.user,
                 recipe=recipe
@@ -150,7 +149,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         purchases = ShoppingCart.objects.filter(user=user)
         file = 'shopping-list.txt'
         with open(file, 'w') as f:
-            shop_cart = dict()
+            shop_cart = {}
             for purchase in purchases:
                 ingredients = IngredientToRecipe.objects.filter(
                     recipe=purchase.recipe.id
@@ -162,8 +161,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
                         shop_cart[point_name] += r.amount
                     else:
                         shop_cart[point_name] = r.amount
-
-            for name, amount in shop_cart.items():
-                f.write(f'* {name} - {amount}\n')
-
+            if shop_cart:
+                f.write(
+                    f'Список покупок для пользователя {user.username}:\n'
+                )
+                for name, amount in shop_cart.items():
+                    f.write(f'* {name} - {amount}\n')
+            else:
+                f.write('Ваш список покупок пуст,'
+                        ' добавьте рецепт(ы) и загрузите его снова!')
         return FileResponse(open(file, 'rb'), as_attachment=True)

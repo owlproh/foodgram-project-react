@@ -1,11 +1,14 @@
+from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from foodgram.settings import RECIPES_LIMIT
 from recipes.models import Recipe
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from users.models import User, Subscription
+from users.models import Subscription
 
+
+User = get_user_model()
 taboo_logins = ('me', 'admin', 'user')
 
 
@@ -89,7 +92,7 @@ class FollowingSerializer(serializers.ModelSerializer):
             )
         if data.get('follower') == data.get('author'):
             raise serializers.ValidationError(
-                'Не пытайтесь накрутить подписчиков!'
+                'Незачем записываться по'
             )
         return data
 
@@ -123,6 +126,20 @@ class FollowingShowRecipeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class InfoSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
+        read_only_fields = fields
+
+
 class FollowingShowSerializer(serializers.ModelSerializer):
     """Сериализатор для подписчиков"""
     recipes = serializers.SerializerMethodField()
@@ -131,9 +148,11 @@ class FollowingShowSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         """Получаем рецепты автора"""
-        recipes_author = obj.recipes.all()[:RECIPES_LIMIT]
-        return FollowingShowRecipeSerializer(
+        request = self.context.get('request')
+        recipes_author = Recipe.objects.filter(author=obj)[:RECIPES_LIMIT]
+        return InfoSerializer(
             recipes_author,
+            context={'request': request},
             many=True
         ).data
 

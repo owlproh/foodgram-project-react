@@ -9,6 +9,8 @@ services:
 
   backend:
     image: owlproh/backend:latest
+    # build: ../backend/
+    restart: always
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/
@@ -19,6 +21,9 @@ services:
 
   frontend:
     image: owlproh/frontend:latest
+    # build:
+    #  context: ../frontend/
+    #  dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
 
