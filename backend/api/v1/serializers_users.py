@@ -137,7 +137,7 @@ class FollowingShowSerializer(MyUserSerializer):
         limit = request.query_params.get('recipes_limit')
         if limit:
             return FollowingShowRecipeSerializer(
-                Recipe.objects.filter(author=obj)[int(limit)],
+                Recipe.objects.filter(author=obj)[:int(limit)],
                 context={'request': request},
                 many=True
             ).data
