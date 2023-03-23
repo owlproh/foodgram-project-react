@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator, RegexValidator
 
 User = get_user_model()
 
-# +
+
 class Tag(models.Model):
     """Класс модели Тегов"""
     name = models.CharField(
@@ -48,7 +48,7 @@ class Tag(models.Model):
     def __str__(self):
         return f'{self.name}, ({self.slug[:TEXT_SL]})'
 
-# +
+
 class Ingredient(models.Model):
     """Класс модели Ингредиентов"""
     name = models.CharField(
@@ -77,7 +77,7 @@ class Ingredient(models.Model):
     def __str__(self):
         return f'{self.name[:TEXT_SL]} ({self.measurement_unit})'
 
-# +
+
 class Recipe(models.Model):
     """Класс модели Рецептов"""
     ingredients = models.ManyToManyField(
@@ -142,7 +142,7 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name[:TEXT_SL]
 
-# +
+
 class IngredientToRecipe(models.Model):
     """Класс вспомогательной модели для связи ингредиентов и рецептов"""
     ingredient = models.ForeignKey(
@@ -186,7 +186,7 @@ class IngredientToRecipe(models.Model):
                 f'следующий(ие) ингредиент(ы): {self.ingredient.name}'
                 f'({self.amount})')
 
-# +
+
 class ShoppingCart(models.Model):
     """Класс модели Корзины"""
     recipe = models.ForeignKey(
@@ -218,7 +218,7 @@ class ShoppingCart(models.Model):
         return (f'Ингредиенты для рецепта {self.recipe.name}'
                 f'добавлены в список покупок пользователя {self.user}')
 
-# +
+
 class Favorite(models.Model):
     """Класс модели Избранных"""
     recipe = models.ForeignKey(
