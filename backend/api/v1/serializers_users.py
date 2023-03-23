@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
-from foodgram.settings import RECIPES_LIMIT
 from recipes.models import Recipe
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -12,7 +11,7 @@ User = get_user_model()
 taboo_logins = ('me', 'admin', 'user')
 
 
-class UserSerializer(UserSerializer):
+class MyUserSerializer(UserSerializer):
     """Сериализатор модели User"""
     is_follower = serializers.SerializerMethodField(read_only=True)
 
@@ -25,9 +24,10 @@ class UserSerializer(UserSerializer):
 
     def get_is_follower(self, obj):
         request = self.context.get('request')
-        if not request or request.user.is_anonymous:
+        user = request.user
+        if not request or user.is_anonymous:
             return False
-        return obj.author.filter(follower=request.user).exists()
+        return Subscription.objects.filter(follower=user, author=obj).exists()
 
     class Meta:
         model = User
@@ -73,7 +73,6 @@ class UserPOSTSerializer(UserCreateSerializer):
     class Meta:
         model = User
         fields = (
-            'id',
             'username',
             'password',
             'first_name',
@@ -92,13 +91,14 @@ class FollowingSerializer(serializers.ModelSerializer):
             )
         if data.get('follower') == data.get('author'):
             raise serializers.ValidationError(
-                'Незачем записываться по'
+                'На себя подписываться не хорошо!'
             )
         return data
 
     class Meta:
         model = Subscription
         fields = (
+            'id',
             'follower',
             'author'
         )
@@ -126,32 +126,23 @@ class FollowingShowRecipeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class InfoSerializer(serializers.ModelSerializer):
-    image = Base64ImageField()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
-        read_only_fields = fields
-
-
-class FollowingShowSerializer(serializers.ModelSerializer):
+class FollowingShowSerializer(MyUserSerializer):
     """Сериализатор для подписчиков"""
     recipes = serializers.SerializerMethodField()
     count_recipes = serializers.SerializerMethodField()
-    is_follower = serializers.SerializerMethodField(read_only=True)
 
     def get_recipes(self, obj):
         """Получаем рецепты автора"""
         request = self.context.get('request')
-        recipes_author = Recipe.objects.filter(author=obj)[:RECIPES_LIMIT]
-        return InfoSerializer(
-            recipes_author,
+        limit = request.query_params.get('recipes_limit')
+        if limit:
+            return FollowingShowRecipeSerializer(
+                Recipe.objects.filter(author=obj)[int(limit)],
+                context={'request': request},
+                many=True
+            ).data
+        return FollowingShowRecipeSerializer(
+            Recipe.objects.filter(author=obj),
             context={'request': request},
             many=True
         ).data
@@ -159,12 +150,6 @@ class FollowingShowSerializer(serializers.ModelSerializer):
     def get_count_recipes(self, obj):
         """Считаем количество рецептов"""
         return obj.recipes.count()
-
-    def get_is_follower(self, obj):
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return obj.author.filter(follower=request.user).exists()
 
     class Meta:
         model = User

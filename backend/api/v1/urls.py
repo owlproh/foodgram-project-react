@@ -1,8 +1,11 @@
+from django.contrib.auth import get_user_model
 from django.urls import include, path
 from rest_framework import routers
 
 from .views_recipes import IngredientViewSet, RecipeViewSet, TagViewSet
 from .views_users import UsersViewSet
+
+User = get_user_model()
 
 router = routers.DefaultRouter()
 

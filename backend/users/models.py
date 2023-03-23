@@ -49,12 +49,12 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = (
+    REQUIRED_FIELDS = [
         'username',
         'first_name',
         'last_name',
         'password'
-    )
+    ]
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -86,12 +86,12 @@ class Subscription(models.Model):
         verbose_name = 'Подписчик'
         verbose_name_plural = 'Подписчики'
         ordering = ('id',)
-        constraints = (
+        constraints = [
             models.UniqueConstraint(
                 fields=['follower', 'author'],
                 name='unique_following'
             ),
-        )
+        ]
 
     def __str__(self):
         return f'Пользователь <<{self.follower}>> подписан на: {self.author}'

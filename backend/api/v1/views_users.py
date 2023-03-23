@@ -1,3 +1,4 @@
+from api.v1.pagination import CustomPagination
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from users.models import Subscription
 
 from .serializers_users import (FollowingSerializer, FollowingShowSerializer,
-                                UserSerializer)
+                                MyUserSerializer)
 
 User = get_user_model()
 
@@ -15,7 +16,8 @@ User = get_user_model()
 class UsersViewSet(UserViewSet):
     """Viewset для объектов модели User"""
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = MyUserSerializer
+    pagination_class = CustomPagination
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
 
     @action(
@@ -29,7 +31,7 @@ class UsersViewSet(UserViewSet):
         """"Выдает информацию по своему профилю,
           с возможностью редактирования"""
         if request.method == 'PATCH':
-            serializer = UserSerializer(
+            serializer = MyUserSerializer(
                 request.user,
                 data=request.data,
                 partial=True,
@@ -38,7 +40,7 @@ class UsersViewSet(UserViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = UserSerializer(
+        serializer = MyUserSerializer(
             request.user,
             context={'request': request}
         )
@@ -60,16 +62,13 @@ class UsersViewSet(UserViewSet):
                 data={
                     'follower': user.id,
                     'author': author.id
-                }
+                },
+                context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            auth_serializer = FollowingShowSerializer(
-                author,
-                context={'request': request}
-            )
             return Response(
-                auth_serializer.data,
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
         follower = get_object_or_404(

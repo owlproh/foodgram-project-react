@@ -1,18 +1,20 @@
-from django.db.models import Exists, OuterRef
-from django.http import FileResponse
+from django.db.models import Exists, OuterRef, Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
 from .serializers_recipes import (CartSerializer, IngredientSerializer,
-                                  RecipeGETSerializer, RecipeInfoSerializer,
-                                  RecipeSerializer, TagSerializer)
+                                  RecipeGETSerializer, RecipeSerializer,
+                                  TagSerializer)
+from .serializers_users import FollowingShowRecipeSerializer
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -23,7 +25,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = [DjangoFilterBackend]
     filtreset_class = IngredientFilter
-    search_fields = ['name']
+    search_fields = ('^name', )
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -41,13 +43,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterser_class = RecipeFilter
-    ordering = ('-pub_date',)
 
     def get_serializer_class(self):
         """Определяет какой сериализатор нужен
          (в зависимости от метода запроса)"""
-        if self.request.method == 'GET':
-            return RecipeGETSerializer
+        if self.request.method in SAFE_METHODS == 'GET':
+            RecipeGETSerializer
         return RecipeSerializer
 
     def get_queryset(self):
@@ -77,7 +78,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """"Передает в поле author данные о пользователе"""
-        serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
     def perform_destroy(self, instance):
@@ -89,7 +89,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             detail=True,
             url_path='favorite',
             url_name='favorite',
-            permission_classes=(permissions.IsAuthenticated,)
+            permission_classes=[permissions.IsAuthenticated]
     )
     def favorite(self, request, pk):
         """Для добавления/удаления в/из Избранное"""
@@ -99,7 +99,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 user=request.user,
                 recipe=recipe
             )
-            serializer = RecipeInfoSerializer(recipe)
+            serializer = FollowingShowRecipeSerializer(recipe)
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED
@@ -114,7 +114,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             detail=True,
             url_path='shopping_cart',
             url_name='shopping_cart',
-            permission_classes=(permissions.IsAuthenticated,)
+            permission_classes=[permissions.IsAuthenticated]
     )
     def cart(self, request, pk):
         """Для добавления/удаления в/из корзину"""
@@ -126,7 +126,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
             serializer = CartSerializer(instance)
             return Response(
-                data=serializer.data,
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
         if ShoppingCart.objects.filter(
@@ -141,33 +141,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['GET'],
         detail=False,
-        permission_classes=(permissions.IsAuthenticated,)
+        permission_classes=[permissions.IsAuthenticated]
     )
     def download_shopping_cart(self, request):
         """Выгрузка списка покупок в .txt формате"""
         user = request.user
-        purchases = ShoppingCart.objects.filter(user=user)
-        file = 'shopping-list.txt'
-        with open(file, 'w') as f:
-            shop_cart = {}
-            for purchase in purchases:
-                ingredients = IngredientToRecipe.objects.filter(
-                    recipe=purchase.recipe.id
-                )
-                for r in ingredients:
-                    i = Ingredient.objects.get(pk=r.ingredient.id)
-                    point_name = f'{i.name} ({i.measurement_unit})'
-                    if point_name in shop_cart.keys():
-                        shop_cart[point_name] += r.amount
-                    else:
-                        shop_cart[point_name] = r.amount
-            if shop_cart:
-                f.write(
-                    f'Список покупок для пользователя {user.username}:\n'
-                )
-                for name, amount in shop_cart.items():
-                    f.write(f'* {name} - {amount}\n')
-            else:
-                f.write('Ваш список покупок пуст,'
-                        ' добавьте рецепт(ы) и загрузите его снова!')
-        return FileResponse(open(file, 'rb'), as_attachment=True)
+        ingredients = IngredientToRecipe.objects.select_related(
+            'recipe', 'ingredients'
+        )
+        ingredients = IngredientToRecipe.objects.filter(
+            recipe__shopping_cart_r__user=user
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
+        shopping_cart = (
+            f'Список покупок для пользователя <<{user.get_username()}>>\n'
+        )
+        shopping_cart += ''.join([
+            f'- {ingredient["ingredient__name"]}'
+            f' - {ingredient["amount"]}'
+            f' ({ingredient["ingredient__measurement_unit"]})'
+            for ingredient in ingredients
+        ])
+        shopping_cart += 'Приятных покупок!:)'
+        filename = "shopping-list.txt"
+        response = HttpResponse(shopping_cart, content_type="text/plain")
+        response["Content-Disposition"] = f"attachment; {filename}"
+        return response

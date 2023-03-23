@@ -1,14 +1,13 @@
 import base64
 
 import webcolors
-from django.db import transaction
 from django.core.files.base import ContentFile
+from django.db import transaction
 from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-
-from .serializers_users import UserSerializer
+from serializers_users import MyUserSerializer
 
 
 class Hex2NameColor(serializers.Field):
@@ -44,7 +43,7 @@ class TagSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'color',
-            'slug',
+            'slug'
         )
 
 
@@ -55,7 +54,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'name',
-            'measurement_unit',
+            'measurement_unit'
         )
 
 
@@ -91,29 +90,15 @@ class FULLItRSerializer(serializers.ModelSerializer):
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe для GET-запросов"""
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    author = UserSerializer(read_only=True)
+    is_favorited = serializers.BooleanField(read_only=True)
+    is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    author = MyUserSerializer(read_only=True)
     ingredients = FULLItRSerializer(
         many=True,
         source='recipe'
     )
-    image = Base64ImageField(required=True, allow_null=True)
-    tags = TagSerializer(many=True, read_only=True)
-
-    def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        user = request.user
-        if not request or user.is_anonymous:
-            return False
-        return user.favorite.filter(recipe=obj).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        user = request.user
-        if not request or user.is_anonymous:
-            return False
-        return user.shopping_cart_u.filter(recipe=obj).exists()
+    image = Base64ImageField()
+    tags = TagSerializer(many=True)
 
     class Meta:
         model = Recipe
@@ -135,12 +120,12 @@ class RecipeGETSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe"""
     ingredients = ItRSerializer(many=True)
-    image = Base64ImageField(required=True, allow_null=True)
+    image = Base64ImageField()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
     )
-    author = UserSerializer(read_only=True)
+    author = MyUserSerializer(read_only=True)
 
     def validate_ingredients(self, data):
         ingredients = self.initial_data.get('ingredients')
@@ -200,7 +185,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'cooking_time', instance.cooking_time
             )
             instance.tags.clear()
-            tags_data = self.initial_data.get('tags')
+            instance.ingredients.clear()
+            tags_data = self.validated_data.get('tags')
             instance.tags.set(tags_data)
             IngredientToRecipe.objects.filter(recipe=instance).all().delete()
             self._create_ingredients(
@@ -231,16 +217,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author',
             'pub_date'
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Recipe.objects.all(),
-                fields=(
-                    'ingredients',
-                    'name'
-                ),
-                message='Такой рецепт уже есть!'
-            )
-        ]
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -249,13 +225,14 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = (
+            'id',
             'recipe',
-            'user',
+            'user'
         )
         validators = [
             UniqueTogetherValidator(
                 queryset=Favorite.objects.all(),
-                fields=('user', 'recipe'),
+                fields=['user', 'recipe'],
                 message='Этот рецепт уже добавлен в Избранное'
             )
         ]
@@ -268,26 +245,12 @@ class CartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = (
             'recipe',
-            'user',
+            'user'
         )
         validators = [
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(),
-                fields=("recipe", "user"),
+                fields=["recipe", "user"],
                 message='Этот рецепт уже в корзине'
             )
         ]
-
-
-class RecipeInfoSerializer(serializers.ModelSerializer):
-    image = Base64ImageField()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
-        read_only_fields = fields
