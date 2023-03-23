@@ -7,7 +7,7 @@ from recipes.models import (Favorite, Ingredient, IngredientToRecipe, Recipe,
                             ShoppingCart, Tag)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from serializers_users import MyUserSerializer
+from .serializers_users import MyUserSerializer
 
 
 class Hex2NameColor(serializers.Field):
