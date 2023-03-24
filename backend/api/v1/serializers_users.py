@@ -159,7 +159,7 @@ class FollowingShowSerializer(MyUserSerializer):
             'first_name',
             'last_name',
             'email',
-            'is_follower',
+            'is_subscribed',
             'recipes',
             'count_recipes'
         )
