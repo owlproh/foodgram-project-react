@@ -27,7 +27,7 @@ class MyUserSerializer(UserSerializer):
         user = request.user
         if not request or user.is_anonymous:
             return False
-        return Subscription.objects.filter(follower=user, author=obj).exists()
+        return Subscription.objects.filter(user=user, author=obj).exists()
 
     class Meta:
         model = User
@@ -85,11 +85,11 @@ class UserPOSTSerializer(UserCreateSerializer):
 class FollowingSerializer(serializers.ModelSerializer):
     """Сериализатор модели Subscriptions"""
     def validate(self, data):
-        if not data.get('follower'):
+        if not data.get('user'):
             raise KeyError(
-                'Не заполнено поле follower!'
+                'Не заполнено поле user!'
             )
-        if data.get('follower') == data.get('author'):
+        if data.get('user') == data.get('author'):
             raise serializers.ValidationError(
                 'На себя подписываться не хорошо!'
             )
@@ -99,13 +99,13 @@ class FollowingSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = (
             'id',
-            'follower',
+            'user',
             'author'
         )
         validators = [
             UniqueTogetherValidator(
                 queryset=Subscription.objects.all(),
-                fields=('follower', 'author'),
+                fields=('user', 'author'),
                 message='Вы уже подписаны на этого автора'
             )
         ]
