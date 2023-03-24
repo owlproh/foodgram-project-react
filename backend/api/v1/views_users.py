@@ -53,7 +53,7 @@ class UsersViewSet(UserViewSet):
         url_name='subscribe',
         permission_classes=[permissions.IsAuthenticated]
     )
-    def get_follow(self, request, id):
+    def subscribe(self, request, id):
         """Подписаться/отписаться на/от автора"""
         user = request.user
         author = get_object_or_404(User, id=id)
@@ -86,7 +86,7 @@ class UsersViewSet(UserViewSet):
         url_name='subscriptions',
         permission_classes=[permissions.IsAuthenticated]
     )
-    def get_follows(self, request):
+    def subscriptions(self, request):
         """Выдает авторов, на кого подписан пользователь"""
         user = request.user
         queryset = User.objects.filter(author__user=user)
