@@ -13,7 +13,7 @@ taboo_logins = ('me', 'admin', 'user')
 
 class MyUserSerializer(UserSerializer):
     """Сериализатор модели User"""
-    is_follower = serializers.SerializerMethodField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     def validate(self, data):
         if data.get('username') in taboo_logins:
@@ -22,7 +22,7 @@ class MyUserSerializer(UserSerializer):
             )
         return data
 
-    def get_is_follower(self, obj):
+    def get_is_subscribed(self, obj):
         request = self.context.get('request')
         user = request.user
         if not request or user.is_anonymous:
@@ -37,7 +37,7 @@ class MyUserSerializer(UserSerializer):
             'first_name',
             'last_name',
             'email',
-            'is_follower'
+            'is_subscribed'
         )
 
 
