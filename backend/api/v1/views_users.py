@@ -71,12 +71,12 @@ class UsersViewSet(UserViewSet):
                 serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        follower = get_object_or_404(
+        subscription = get_object_or_404(
             Subscription,
             user=user,
             author=author
         )
-        follower.delete()
+        subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
