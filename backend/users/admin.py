@@ -27,11 +27,11 @@ class SubscribeAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'author',
-        'follower',
+        'user',
     )
     empty_value_display = '<--пусто-->'
-    list_filter = ('author', 'follower',)
-    search_fields = ('author', 'follower',)
+    list_filter = ('author', 'user',)
+    search_fields = ('author', 'user',)
     list_per_page = LIST_PER_PAGE
 
 

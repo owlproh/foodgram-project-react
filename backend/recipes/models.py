@@ -11,7 +11,6 @@ class Tag(models.Model):
     name = models.CharField(
         max_length=150,
         unique=True,
-        db_index=True,
         validators=[RegexValidator(
             regex=r'^[a-fA-FА-Яа-я0-9]',
             message='Название тега содержит недопустимый символ'
@@ -53,7 +52,6 @@ class Ingredient(models.Model):
     """Класс модели Ингредиентов"""
     name = models.CharField(
         max_length=150,
-        db_index=True,
         verbose_name='Название',
         help_text='Введите название ингредиента',
     )
@@ -102,7 +100,6 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         max_length=200,
-        db_index=True,
         unique=True,
         verbose_name='Название',
         help_text='Введите название блюда',
@@ -117,20 +114,18 @@ class Recipe(models.Model):
             MinValueValidator(
                 1,
                 message='Время приготовления не может быть меньше 1 м.'
-            ),
+            )
         ],
         help_text='Введите время приготовления блюда в минутах',
     )
     author = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         related_name='recipes',
         verbose_name='Автор рецепта',
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
-        db_index=True,
         verbose_name='Дата публикации',
     )
 

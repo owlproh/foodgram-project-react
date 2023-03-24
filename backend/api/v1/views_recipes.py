@@ -48,7 +48,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Определяет какой сериализатор нужен
          (в зависимости от метода запроса)"""
         if self.request.method in SAFE_METHODS == 'GET':
-            RecipeGETSerializer
+            return RecipeGETSerializer
         return RecipeSerializer
 
     def get_queryset(self):
@@ -118,10 +118,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def cart(self, request, pk):
         """Для добавления/удаления в/из корзину"""
+        user = request.user
         if request.method == 'POST':
             recipe = get_object_or_404(Recipe, id=pk)
             instance = ShoppingCart.objects.create(
-                user=request.user,
+                user=user,
                 recipe=recipe
             )
             serializer = CartSerializer(instance)
@@ -130,10 +131,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
         if ShoppingCart.objects.filter(
-            user=request.user, recipe__id=pk
+            user=user, recipe__id=pk
         ).exists():
             ShoppingCart.objects.filter(
-                user=request.user, recipe__id=pk
+                user=user,
+                recipe__id=pk
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -146,9 +148,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Выгрузка списка покупок в .txt формате"""
         user = request.user
-        ingredients = IngredientToRecipe.objects.select_related(
-            'recipe', 'ingredients'
-        )
         ingredients = IngredientToRecipe.objects.filter(
             recipe__shopping_cart_r__user=user
         ).values(
@@ -156,9 +155,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'ingredient__measurement_unit'
         ).annotate(amount=Sum('amount'))
         shopping_cart = (
-            f'Список покупок для пользователя <<{user.get_username()}>>\n'
+            f'Список покупок для пользователя << {user.get_username()} >>\n'
         )
-        shopping_cart += ''.join([
+        shopping_cart += '\n'.join([
             f'- {ingredient["ingredient__name"]}'
             f' - {ingredient["amount"]}'
             f' ({ingredient["ingredient__measurement_unit"]})'

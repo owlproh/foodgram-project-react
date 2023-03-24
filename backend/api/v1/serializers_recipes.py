@@ -35,7 +35,7 @@ class Base64ImageField(serializers.ImageField):
 
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор модели Tag"""
-    color = Hex2NameColor()
+    color = Hex2NameColor
 
     class Meta:
         model = Tag
@@ -170,7 +170,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'проверьте поля tags и ingredients)'
             )
         recipe = Recipe.objects.create(**validated_data)
-        recipe.save()
         recipe.tags.set(tags_data)
         self._create_ingredients(ingredients_data, recipe)
         return recipe
@@ -201,8 +200,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'проверьте все поля формы'
             )
 
-    def to_representation(self, recipe):
-        return RecipeGETSerializer(recipe, context=self.context).data
+    def to_representation(self, obj):
+        return RecipeGETSerializer(obj, context=self.context).data
 
     class Meta:
         model = Recipe

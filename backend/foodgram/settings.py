@@ -138,4 +138,3 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LIST_PER_PAGE: int = 10
 TEXT_SL: int = 15
-RECIPES_LIMIT: int = 2

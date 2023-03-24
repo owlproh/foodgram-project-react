@@ -51,7 +51,7 @@ class UsersViewSet(UserViewSet):
         detail=True,
         url_path='subscribe',
         url_name='subscribe',
-        permission_classes=(permissions.IsAuthenticated, )
+        permission_classes=[permissions.IsAuthenticated]
     )
     def get_follow(self, request, id):
         """Подписаться/отписаться на/от автора"""
@@ -60,7 +60,7 @@ class UsersViewSet(UserViewSet):
         if request.method == 'POST':
             serializer = FollowingSerializer(
                 data={
-                    'follower': user.id,
+                    'user': user.id,
                     'author': author.id
                 },
                 context={'request': request}
@@ -73,7 +73,7 @@ class UsersViewSet(UserViewSet):
             )
         follower = get_object_or_404(
             Subscription,
-            follower=user,
+            user=user,
             author=author
         )
         follower.delete()
@@ -84,13 +84,13 @@ class UsersViewSet(UserViewSet):
         detail=False,
         url_path='subscriptions',
         url_name='subscriptions',
-        permission_classes=(permissions.IsAuthenticated, )
+        permission_classes=[permissions.IsAuthenticated]
     )
     def get_follows(self, request):
         """Выдает авторов, на кого подписан пользователь"""
         user = request.user
-        authors = User.objects.filter(author__follower=user)
-        result_pages = self.paginate_queryset(authors)
+        queryset = User.objects.filter(author__user=user)
+        result_pages = self.paginate_queryset(queryset)
         serializer = FollowingShowSerializer(
             result_pages,
             context={'request': request},

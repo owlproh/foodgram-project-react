@@ -7,7 +7,6 @@ class User(AbstractUser):
     """Класс модели Пользователя"""
     username = models.CharField(
         max_length=150,
-        blank=False,
         unique=True,
         db_index=True,
         validators=[RegexValidator(
@@ -19,27 +18,22 @@ class User(AbstractUser):
     )
     password = models.CharField(
         max_length=150,
-        blank=False,
         verbose_name='Пароль',
         help_text='Помните о надежности пароля:)'
     )
     first_name = models.CharField(
         max_length=150,
-        blank=False,
         verbose_name='Имя',
         help_text='Как к Вам обращаться?'
     )
     last_name = models.CharField(
         max_length=150,
-        blank=False,
         verbose_name='Фамилия',
         help_text='Ваша фамилия, если имеется'
     )
     email = models.EmailField(
         max_length=254,
         unique=True,
-        blank=False,
-        db_index=True,
         verbose_name='email',
         help_text='Введите Ваш email'
     )
@@ -66,7 +60,7 @@ class User(AbstractUser):
 
 class Subscription(models.Model):
     """Класс модели Подписок"""
-    follower = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='follower',
@@ -88,10 +82,10 @@ class Subscription(models.Model):
         ordering = ('id',)
         constraints = [
             models.UniqueConstraint(
-                fields=['follower', 'author'],
+                fields=['user', 'author'],
                 name='unique_following'
             ),
         ]
 
     def __str__(self):
-        return f'Пользователь <<{self.follower}>> подписан на: {self.author}'
+        return f'Пользователь <<{self.user}>> подписан на: {self.author}'
