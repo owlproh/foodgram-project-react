@@ -107,8 +107,8 @@ DJOSER = {
     'HIDE_USERS': False,
     'SERIALIZERS': {
         'user_create': 'api.v1.serializers_users.UserPOSTSerializer',
-        'user': 'api.v1.serializers_users.UserSerializer',
-        'current_user': 'api.v1.serializers_users.UserSerializer',
+        'user': 'api.v1.serializers_users.MyUserSerializer',
+        'current_user': 'api.v1.serializers_users.MyUserSerializer',
         'token': 'djoser.serializers.TokenSerializer',
         'token_create': 'djoser.serializers.TokenCreateSerializer',
     },

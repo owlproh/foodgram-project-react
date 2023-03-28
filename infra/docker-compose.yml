@@ -8,8 +8,7 @@ services:
       - ./.env
 
   backend:
-    # image: owlproh/backend:latest
-    build: ../backend/
+    image: owlproh/backend:latest
     restart: always
     volumes:
       - static_value:/app/static/
@@ -20,10 +19,7 @@ services:
       - .env
 
   frontend:
-    # image: owlproh/frontend:latest
-    build: 
-      context: ../frontend/
-      dockerfile: Dockerfile
+    image: owlproh/frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
 

@@ -23,8 +23,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = None
-    filter_backends = [DjangoFilterBackend]
-    filtreset_class = IngredientFilter
+    filter_backends = (DjangoFilterBackend, )
+    filter_class = IngredientFilter
     search_fields = ('^name', )
 
 
@@ -42,7 +42,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsOwnerOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
-    filterser_class = RecipeFilter
+    filter_class = RecipeFilter
 
     def get_serializer_class(self):
         """Определяет какой сериализатор нужен
