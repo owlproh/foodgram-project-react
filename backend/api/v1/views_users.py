@@ -21,32 +21,6 @@ class UsersViewSet(UserViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
 
     @action(
-        methods=['GET', 'PATCH'],
-        detail=False,
-        url_path='me',
-        url_name='me',
-        permission_classes=(permissions.IsAuthenticatedOrReadOnly, )
-    )
-    def get_me(self, request):
-        """"Выдает информацию по своему профилю,
-          с возможностью редактирования"""
-        if request.method == 'PATCH':
-            serializer = MyUserSerializer(
-                request.user,
-                data=request.data,
-                partial=True,
-                context={'request': request}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = MyUserSerializer(
-            request.user,
-            context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
         methods=['POST', 'DELETE'],
         detail=True,
         url_path='subscribe',
@@ -89,7 +63,7 @@ class UsersViewSet(UserViewSet):
     def subscriptions(self, request):
         """Выдает авторов, на кого подписан пользователь"""
         user = request.user
-        queryset = User.objects.filter(author__user=user)
+        queryset = User.objects.filter(following__user=user)
         result_pages = self.paginate_queryset(queryset)
         serializer = FollowingShowSerializer(
             result_pages,

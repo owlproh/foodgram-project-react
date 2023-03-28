@@ -71,7 +71,7 @@ class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='author',
+        related_name='following',
         verbose_name='Автор',
         help_text='Выберите автора, на кого нужно оформить подписку'
     )
